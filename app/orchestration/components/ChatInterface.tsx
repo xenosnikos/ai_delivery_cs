@@ -54,7 +54,8 @@ export default function ChatInterface({
     socketClient.onMessageReceived(handleMessage);
 
     return () => {
-      // Cleanup if needed
+      // Remove this specific listener on cleanup
+      socketClient.offMessageReceived(handleMessage);
     };
   }, [conversationId, addMessage]);
 

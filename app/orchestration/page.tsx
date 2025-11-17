@@ -63,8 +63,8 @@ export default function OrchestrationPage() {
     const socket = socketClient.connect();
     setIsConnected(true);
 
-    // Listen for AI events from manual chat messages
-    socketClient.onAIEvent((aiEvent) => {
+    // Define handlers so we can remove them later
+    const handleAIEvent = (aiEvent: any) => {
       // Convert AI event to orchestration event
       if (aiEvent.type === 'thinking' || aiEvent.type === 'tool_call') {
         // Create reasoning event
@@ -98,10 +98,9 @@ export default function OrchestrationPage() {
         ...prev,
         totalEvents: prev.totalEvents + 1
       }));
-    });
+    };
 
-    // Listen for messages to create event entries
-    socketClient.onMessageReceived((message) => {
+    const handleMessage = (message: any) => {
       // If message is from a persona (not AI), create an event
       if (!message.isAI && message.conversationId.startsWith('orchestration-')) {
         const eventActor = message.senderRole as 'customer' | 'business' | 'driver' | 'system';
@@ -123,10 +122,9 @@ export default function OrchestrationPage() {
 
         setEvents(prev => [...prev, messageEvent]);
       }
-    });
+    };
 
-    // Listen for orchestration actions from manual chat
-    socket.on('orchestration:actions', (data: {
+    const handleOrchestrationActions = (data: {
       conversationId: string;
       actions: any[];
       timestamp: Date;
@@ -158,10 +156,18 @@ export default function OrchestrationPage() {
         avgResponseTime: 3,
         costSaved: prev.costSaved + data.actions.reduce((sum: number, a: any) => sum + a.cost, 0)
       }));
-    });
+    };
+
+    // Add listeners
+    socketClient.onAIEvent(handleAIEvent);
+    socketClient.onMessageReceived(handleMessage);
+    socket.on('orchestration:actions', handleOrchestrationActions);
 
     return () => {
-      socketClient.removeAllListeners();
+      // Remove specific listeners
+      socketClient.offAIEvent(handleAIEvent);
+      socketClient.offMessageReceived(handleMessage);
+      socket.off('orchestration:actions', handleOrchestrationActions);
     };
   }, []);
 

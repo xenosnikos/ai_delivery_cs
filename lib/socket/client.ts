@@ -64,8 +64,16 @@ class SocketClient {
     this.socket?.on('message:received', callback);
   }
 
+  offMessageReceived(callback: (message: Message) => void): void {
+    this.socket?.off('message:received', callback);
+  }
+
   onAIEvent(callback: (event: AIEvent) => void): void {
     this.socket?.on('ai:event', callback);
+  }
+
+  offAIEvent(callback: (event: AIEvent) => void): void {
+    this.socket?.off('ai:event', callback);
   }
 
   // Order methods
